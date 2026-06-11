@@ -39,29 +39,74 @@ export default function AuditLogs() {
     loadLogs();
   }, []);
 
-  const parseDetails = (detailsStr: string) => {
+  const parseDetails = (detailsStr: string, action: string) => {
     try {
       const details = JSON.parse(detailsStr);
       
-      // Customize output representation based on format
-      if (details.assetName) {
-        let actionDesc = `Asset: ${details.assetName}`;
-        if (details.quantity) actionDesc += ` (Qty: ${details.quantity})`;
-        if (details.borrower) actionDesc += ` &bull; Borrower: ${details.borrower}`;
-        if (details.condition) actionDesc += ` &bull; Condition: ${details.condition}`;
-        if (details.comments) actionDesc += ` &bull; Comments: "${details.comments}"`;
-        return <span dangerouslySetInnerHTML={{ __html: actionDesc }} />;
+      switch (action) {
+        case "CREATE_ASSET":
+          return (
+            <span>
+              Created asset <strong className="text-white font-semibold">{details.name}</strong> ({details.category}) &bull; Initial Qty: {details.quantity}
+            </span>
+          );
+        case "UPDATE_ASSET":
+          return (
+            <span>
+              Updated asset &bull; Current: <strong className="text-white font-semibold">{details.current.name}</strong> (Qty: {details.current.quantity}) &bull; Previously: {details.previous.name} (Qty: {details.previous.quantity})
+            </span>
+          );
+        case "DELETE_ASSET":
+          return (
+            <span>
+              Deleted asset <strong className="text-white font-semibold">{details.name}</strong> ({details.category})
+            </span>
+          );
+        case "APPROVE_BOOKING":
+          return (
+            <span>
+              Approved booking for <strong className="text-white font-semibold">{details.borrower}</strong> &bull; {details.quantity}x {details.assetName}
+            </span>
+          );
+        case "REJECT_BOOKING":
+          return (
+            <span>
+              Rejected booking for <strong className="text-white font-semibold">{details.borrower}</strong> &bull; {details.quantity}x {details.assetName} {details.reason ? `(Reason: "${details.reason}")` : ""}
+            </span>
+          );
+        case "ISSUE_ASSET":
+          return (
+            <span>
+              Issued {details.quantity}x <strong className="text-white font-semibold">{details.assetName}</strong> to <strong className="text-white font-semibold">{details.borrower}</strong>
+            </span>
+          );
+        case "RETURN_ASSET":
+          return (
+            <span>
+              Returned {details.quantity}x <strong className="text-white font-semibold">{details.assetName}</strong> from <strong className="text-white font-semibold">{details.borrower}</strong> &bull; Condition: <span className="font-semibold text-emerald-400">{details.condition}</span> {details.comments ? `(Comments: "${details.comments}")` : ""}
+            </span>
+          );
+        case "UPDATE_PROFILE":
+          return (
+            <span>
+              Updated profile &bull; Name: <strong className="text-white font-semibold">{details.name}</strong> &bull; Section: {details.section}
+            </span>
+          );
+        case "PROMOTE_USER":
+          return (
+            <span>
+              Promoted <strong className="text-white font-semibold">{details.targetUserEmail}</strong> to <span className="font-semibold text-violet-400">ADMIN</span>
+            </span>
+          );
+        case "DEMOTE_USER":
+          return (
+            <span>
+              Demoted <strong className="text-white font-semibold">{details.targetUserEmail}</strong> to <span className="font-semibold text-slate-400">CONSUMER</span>
+            </span>
+          );
+        default:
+          return JSON.stringify(details);
       }
-      
-      if (details.previous && details.current) {
-        return (
-          <span>
-            Updated: {details.current.name} (Qty: {details.current.quantity}) &bull; Previously: {details.previous.name} (Qty: {details.previous.quantity})
-          </span>
-        );
-      }
-      
-      return JSON.stringify(details);
     } catch (err) {
       return detailsStr;
     }
@@ -136,7 +181,7 @@ export default function AuditLogs() {
                       </span>
                     </td>
                     <td className="py-4 px-6 text-slate-400 text-xs leading-relaxed max-w-md">
-                      {parseDetails(log.details)}
+                      {parseDetails(log.details, log.action)}
                     </td>
                   </tr>
                 ))}
